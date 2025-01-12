@@ -28,9 +28,7 @@ public class Graphe {
 
     public void ajouterArrete(String source, String destination, int poids) {
         Sommet sourceSommet = getSommet(source);
-        Sommet destinationSommet = getSommet(destination);
-        Arrete arrete = new Arrete(sourceSommet, destinationSommet, poids);
-        sourceSommet.ajouterArrete(arrete);
+        sourceSommet.ajouterArrete(source, destination, poids);
     }
 
     public int getIndiceSommet(String nom) {

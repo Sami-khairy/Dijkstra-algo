@@ -20,7 +20,8 @@ class Sommet {
         return arretes;
     }
 
-    public void ajouterArrete(Arrete arrete) {
+    public void ajouterArrete(String source, String destination, int poids) {
+        Arrete arrete = new Arrete(source, destination, poids);
         this.arretes.add(arrete);
     }
 

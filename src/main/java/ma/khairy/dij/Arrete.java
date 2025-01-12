@@ -1,21 +1,21 @@
 package ma.khairy.dij;
 
 class Arrete {
-    private final Sommet source;
-    private final Sommet destination;
+    private final String source;
+    private final String destination;
     private final int poids;
 
-    public Arrete(Sommet source, Sommet destination, int poids) {
+    public Arrete(String source, String destination, int poids) {
         this.source = source;
         this.destination = destination;
         this.poids = poids;
     }
 
-    public Sommet getSource() {
+    public String getSource() {
         return source;
     }
 
-    public Sommet getDestination() {
+    public String getDestination() {
         return destination;
     }
 
@@ -25,7 +25,6 @@ class Arrete {
 
     @Override
     public String toString() {
-        return "(" + source.getNom() + " -> " + destination.getNom() + ", poids: " + poids + ")";
+        return "(" + source + " -> " + destination + ", poids: " + poids + ")";
     }
 }
-

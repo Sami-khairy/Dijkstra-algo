@@ -4,10 +4,10 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class Dijkstra {
-    private final Map<Sommet, Integer> distances;
-    private final Map<Sommet, Sommet> predecesseurs;
-    private final Set<Sommet> sommetsNonVisites;
-    private final Set<Sommet> sommetsVisites;
+    private final Map<String, Integer> distances;
+    private final Map<String, String> predecesseurs;
+    private final Set<String> sommetsNonVisites;
+    private final Set<String> sommetsVisites;
     private final Graphe graphe;
 
     public Dijkstra(Graphe graphe) {
@@ -19,9 +19,8 @@ public class Dijkstra {
     }
 
     public Map<String, Integer> calculerCheminMinimal(String sommetDepartNom, boolean details) {
-        Sommet sommetDepart = graphe.getSommet(sommetDepartNom);
-        distances.put(sommetDepart, 0);
-        sommetsNonVisites.addAll(graphe.getSommets());
+        distances.put(sommetDepartNom, 0);
+        sommetsNonVisites.addAll(graphe.getSommets().stream().map(Sommet::getNom).collect(Collectors.toSet()));
 
         // Affichage initial
         if (details) {
@@ -30,41 +29,38 @@ public class Dijkstra {
 
         int iteration = 0;
         while (!sommetsNonVisites.isEmpty()) {
-            Sommet sommetCourant = obtenirSommetDistanceMinimale();
-            if (sommetCourant == null) break; // Aucun chemin restant
-            sommetsNonVisites.remove(sommetCourant);
-            sommetsVisites.add(sommetCourant);
+            String sommetCourantNom = obtenirSommetDistanceMinimale();
+            if (sommetCourantNom == null) break; // Aucun chemin restant
+            sommetsNonVisites.remove(sommetCourantNom);
+            sommetsVisites.add(sommetCourantNom);
 
             // Afficher les détails après chaque itération
             if (details) {
-                afficherEtatIteration(sommetCourant, iteration++);
+                afficherEtatIteration(sommetCourantNom, iteration++);
             }
 
+            Sommet sommetCourant = graphe.getSommet(sommetCourantNom);
             for (Arrete arrete : sommetCourant.getArretes()) {
-                Sommet voisin = arrete.getDestination();
-                if (sommetsNonVisites.contains(voisin)) {
-                    int nouvelleDistance = distances.getOrDefault(sommetCourant, Integer.MAX_VALUE) + arrete.getPoids();
-                    if (nouvelleDistance < distances.getOrDefault(voisin, Integer.MAX_VALUE)) {
-                        distances.put(voisin, nouvelleDistance);
-                        predecesseurs.put(voisin, sommetCourant);
+                String voisinNom = arrete.getDestination();
+                if (sommetsNonVisites.contains(voisinNom)) {
+                    int nouvelleDistance = distances.getOrDefault(sommetCourantNom, Integer.MAX_VALUE) + arrete.getPoids();
+                    if (nouvelleDistance < distances.getOrDefault(voisinNom, Integer.MAX_VALUE)) {
+                        distances.put(voisinNom, nouvelleDistance);
+                        predecesseurs.put(voisinNom, sommetCourantNom);
                     }
                 }
             }
         }
 
         // Convertir les résultats pour retourner des noms de sommets avec leurs distances
-        Map<String, Integer> result = new HashMap<>();
-        for (Sommet sommet : distances.keySet()) {
-            result.put(sommet.getNom(), distances.get(sommet));
-        }
-        return result;
+        return new HashMap<>(distances);
     }
 
-    private Sommet obtenirSommetDistanceMinimale() {
-        Sommet sommetMin = null;
+    private String obtenirSommetDistanceMinimale() {
+        String sommetMin = null;
         int distanceMin = Integer.MAX_VALUE;
 
-        for (Sommet sommet : sommetsNonVisites) {
+        for (String sommet : sommetsNonVisites) {
             int distance = distances.getOrDefault(sommet, Integer.MAX_VALUE);
             if (distance < distanceMin) {
                 distanceMin = distance;
@@ -77,23 +73,23 @@ public class Dijkstra {
 
     private void afficherEtatInitial() {
         // Afficher l'initialisation
-        Set<Sommet> sommetsVisitesInitiaux = new HashSet<>();
-        Set<Sommet> sommetsNonVisitesInitiaux = new HashSet<>(graphe.getSommets());
+        Set<String> sommetsVisitesInitiaux = new HashSet<>();
+        Set<String> sommetsNonVisitesInitiaux = new HashSet<>(graphe.getSommets().stream().map(Sommet::getNom).collect(Collectors.toSet()));
 
         // Ajouter le sommet de départ à S
-        Sommet sommetDepart = graphe.getSommets().stream()
-                .filter(s -> distances.getOrDefault(s, Integer.MAX_VALUE) == 0)
+        String sommetDepartNom = graphe.getSommets().stream()
+                .filter(s -> distances.getOrDefault(s.getNom(), Integer.MAX_VALUE) == 0)
+                .map(Sommet::getNom)
                 .findFirst()
                 .orElse(null);
 
-        if (sommetDepart != null) {
-            sommetsVisitesInitiaux.add(sommetDepart);
-            sommetsNonVisitesInitiaux.remove(sommetDepart);
+        if (sommetDepartNom != null) {
+            sommetsVisitesInitiaux.add(sommetDepartNom);
+            sommetsNonVisitesInitiaux.remove(sommetDepartNom);
         }
 
-        String S = "{" + (sommetDepart != null ? sommetDepart.getNom() : "") + "}";
+        String S = "{" + (sommetDepartNom != null ? sommetDepartNom : "") + "}";
         String S_ = sommetsNonVisitesInitiaux.stream()
-                .map(Sommet::getNom)
                 .collect(Collectors.joining(", ", "[", "]"));
 
         String pi = calculerVecteurPi(); // Utiliser la méthode calculerVecteurPi pour afficher les distances
@@ -102,21 +98,22 @@ public class Dijkstra {
         System.out.println("S=" + S + " ; 𝑆−=" + S_ + " ; π=" + pi);
     }
 
-    private void afficherEtatIteration(Sommet sommetCourant, int iteration) {
+    private void afficherEtatIteration(String sommetCourantNom, int iteration) {
         // Affichage de l'étape i, des successeurs et de la mise à jour des distances
         System.out.println(iteration + "ère Itération :");
         String pi = calculerVecteurPi();
-        System.out.println("Les successeurs de " + sommetCourant.getNom() + " dans 𝑆−");
+        System.out.println("Les successeurs de " + sommetCourantNom + " dans 𝑆−");
 
+        Sommet sommetCourant = graphe.getSommet(sommetCourantNom);
         for (Arrete arrete : sommetCourant.getArretes()) {
-            Sommet voisin = arrete.getDestination();
-            int nouvelleDistance = distances.getOrDefault(sommetCourant, Integer.MAX_VALUE) + arrete.getPoids();
-            if (nouvelleDistance < distances.getOrDefault(voisin, Integer.MAX_VALUE)) {
-                System.out.println("π(" + voisin.getNom() + ")=min(" +
-                        (distances.containsKey(voisin) ?
-                                (distances.get(voisin) == Integer.MAX_VALUE ? "∞" : distances.get(voisin)) : "∞") +
-                        "," + distances.get(sommetCourant) + "+" + arrete.getPoids() + ")=" + nouvelleDistance);
-                distances.put(voisin, nouvelleDistance);
+            String voisinNom = arrete.getDestination();
+            int nouvelleDistance = distances.getOrDefault(sommetCourantNom, Integer.MAX_VALUE) + arrete.getPoids();
+            if (nouvelleDistance < distances.getOrDefault(voisinNom, Integer.MAX_VALUE)) {
+                System.out.println("π(" + voisinNom + ")=min(" +
+                        (distances.containsKey(voisinNom) ?
+                                (distances.get(voisinNom) == Integer.MAX_VALUE ? "∞" : distances.get(voisinNom)) : "∞") +
+                        "," + distances.get(sommetCourantNom) + "+" + arrete.getPoids() + ")=" + nouvelleDistance);
+                distances.put(voisinNom, nouvelleDistance);
                 pi = calculerVecteurPi();
             }
         }
@@ -129,7 +126,7 @@ public class Dijkstra {
         // Calculer le vecteur π sous la forme (nom_sommet:valeur)
         StringBuilder pi = new StringBuilder("(");
         for (Sommet sommet : graphe.getSommets()) {
-            int distance = distances.getOrDefault(sommet, Integer.MAX_VALUE);
+            int distance = distances.getOrDefault(sommet.getNom(), Integer.MAX_VALUE);
             pi.append(sommet.getNom()).append(":"); // Ajouter le nom du sommet et ":"
             if (distance == Integer.MAX_VALUE) {
                 pi.append("∞"); // Utiliser le symbole infini
